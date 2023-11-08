@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     temp_min_atendimento = atoi(argv[5]);
     temp_max_atendimento = atoi(argv[6]);
 
-    if(prob_tatoo < 0 || prob_tatoo > 0.9f){
+    if(prob_tatoo < 0 || prob_tatoo > 0.99f){
         printf("Uso incorreto! Probabilidade de cliente para tatoo deve ser entre 0 e 0.99");
         return 1;
     }
@@ -167,56 +167,50 @@ void *bodypiercer(void *qualquercoisa) {
 }
 
 void *cliente(void *qualquercoisa) {
-
-    while(!terminaExpediente()){
+    while (!terminaExpediente()) {
         int chegada_de_cliente = rand() % (10 - 1 + 1) + 1;
-        
-        for( int i = 0; i < chegada_de_cliente; i++ ){
-            float tipo_atendimento = (float) rand() / (float) RAND_MAX;
-            if(tipo_atendimento > prob_tatoo){ //Caso caia aqui ele fara um piercing)
-                if(piercing_atendendo){//aqui ele estara atendendo
-                    if(puffs_piercirg_ocupados == pufs_piercing){
-                        printf("Um cliente de Piercing chegou e foi embora pois não foi atendido e não podia sentar (não há pufs disponíveis).\n");
-                        sem_wait(&semaphore);//inicia a sessão crítica
-                        clientes_nao_atendidos++;
-                        sem_post(&semaphore);//termina a sessão crítica
-                    }else{
-                        printf("Chegou e foi sentar num puf de espera.\n");
-                        sem_wait(&semaphore);//inicia a sessão crítica
-                        puffs_piercirg_ocupados++;
-                        sem_post(&semaphore);//termina a sessão crítica
-                    }
-                }else{
-                    printf("Chegou e foi atendido imediatamente.\n");
-                    sem_wait(&semaphore);//inicia a sessão crítica
+
+        for (int i = 0; i < chegada_de_cliente; i++) {
+            float tipo_atendimento = (float)rand() / (float)RAND_MAX;
+            bool cliente_para_tatoo = (tipo_atendimento <= prob_tatoo);
+
+            if (cliente_para_tatoo) {
+                if (tatoo_atendendo) {
+                    printf("Chegou e foi atendido imediatamente para tatuagem.\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
                     clientes_atendidos_sem_espera++;
-                    puffs_piercirg_ocupados++;
-                    sem_post(&semaphore);//termina a sessão crítica
-                }
-            }else{
-                if(tatoo_atendendo){//aqui ele estara atendendo
-                    if(puffs_tatuagem_ocupados == pufs_tatoo){
-                        printf("Um cliente de Tatto chegou e foi embora pois não foi atendido e não podia sentar (não há pufs disponíveis).\n");
-                        sem_wait(&semaphore);//inicia a sessão crítica
-                        clientes_nao_atendidos++;
-                        sem_post(&semaphore);//termina a sessão crítica
-                    }else{
-                        printf("Chegou e foi sentar num puf de espera.\n");
-                        sem_wait(&semaphore);//inicia a sessão crítica
-                        puffs_tatuagem_ocupados++;
-                        sem_post(&semaphore);//termina a sessão crítica
-                    }
-                }else{
-                    printf("Chegou e foi atendido imediatamente.\n");
-                    sem_wait(&semaphore);//inicia a sessão crítica
-                    clientes_atendidos_sem_espera++;
+                    sem_post(&semaphore); // Termina a sessão crítica
+                } else if (puffs_tatuagem_ocupados < pufs_tatoo) {
+                    printf("Chegou e foi sentar num puf de espera para tatuagem.\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
                     puffs_tatuagem_ocupados++;
-                    sem_post(&semaphore);//termina a sessão crítica
+                    sem_post(&semaphore); // Termina a sessão crítica
+                } else {
+                    printf("Um cliente de tatuagem chegou e foi embora pois não foi atendido e não podia sentar (não há pufs disponíveis).\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
+                    clientes_nao_atendidos++;
+                    sem_post(&semaphore); // Termina a sessão crítica
                 }
-            }    
+            } else {
+                if (piercing_atendendo) {
+                    printf("Chegou e foi atendido imediatamente para body piercing.\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
+                    clientes_atendidos_sem_espera++;
+                    sem_post(&semaphore); // Termina a sessão crítica
+                } else if (puffs_piercirg_ocupados < pufs_piercing) {
+                    printf("Chegou e foi sentar num puf de espera para body piercing.\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
+                    puffs_piercirg_ocupados++;
+                    sem_post(&semaphore); // Termina a sessão crítica
+                } else {
+                    printf("Um cliente de body piercing chegou e foi embora pois não foi atendido e não podia sentar (não há pufs disponíveis).\n");
+                    sem_wait(&semaphore); // Inicia a sessão crítica
+                    clientes_nao_atendidos++;
+                    sem_post(&semaphore); // Termina a sessão crítica
+                }
+            }
         }
         usleep(100);
     }
     return NULL;
 }
-
