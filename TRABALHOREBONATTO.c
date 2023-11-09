@@ -175,10 +175,11 @@ void *cliente(void *qualquercoisa) {
             bool cliente_para_tatoo = (tipo_atendimento <= prob_tatoo);
 
             if (cliente_para_tatoo) {
-                if (tatoo_atendendo) {
+                if (!tatoo_atendendo) {
                     printf("Chegou e foi atendido imediatamente para tatuagem.\n");
                     sem_wait(&semaphore); // Inicia a sessão crítica
                     clientes_atendidos_sem_espera++;
+                    tatoo_atendendo = true;
                     sem_post(&semaphore); // Termina a sessão crítica
                 } else if (puffs_tatuagem_ocupados < pufs_tatoo) {
                     printf("Chegou e foi sentar num puf de espera para tatuagem.\n");
@@ -192,10 +193,11 @@ void *cliente(void *qualquercoisa) {
                     sem_post(&semaphore); // Termina a sessão crítica
                 }
             } else {
-                if (piercing_atendendo) {
+                if (!piercing_atendendo) {
                     printf("Chegou e foi atendido imediatamente para body piercing.\n");
                     sem_wait(&semaphore); // Inicia a sessão crítica
                     clientes_atendidos_sem_espera++;
+                    piercing_atendendo = true;
                     sem_post(&semaphore); // Termina a sessão crítica
                 } else if (puffs_piercirg_ocupados < pufs_piercing) {
                     printf("Chegou e foi sentar num puf de espera para body piercing.\n");
